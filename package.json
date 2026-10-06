@@ -1,0 +1,20 @@
+{
+  "name": "commercial-lab-software",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "db:generate": "drizzle-kit generate",
+    "test": "node tests/api.test.mjs",
+    "test:reliability": "node --test tests/client-reliability.test.mjs tests/offline.test.mjs tests/permissions.test.mjs tests/finance-home.test.mjs tests/sales-privacy.test.mjs tests/ultrasound.test.mjs tests/record-delta.test.mjs tests/result-email.test.mjs tests/patient-age.test.mjs tests/storage-scale.test.mjs tests/device-gateway.test.mjs tests/stock.test.mjs tests/monthly-report.test.mjs"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.4",
+    "drizzle-orm": "0.44.5"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "esbuild": "^0.28.2"
+  }
+}

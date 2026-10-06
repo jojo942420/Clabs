@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {monthlyFromState,reportMonth,stampCompletionDates} from '../worker/monthly-report.js';
+const admin={role:'admin'},lab={role:'scientist',permissions:['monthlyReports']};
+const blank=()=>({revision:8,data:{patients:[{id:'P1',name:'Patient A',sequenceNumber:1}],orders:[],ultrasoundReports:[]}});
+test('monthly totals count performed orders once, keep every result and exclude blank/other months',()=>{
+ const s=blank();s.data.orders=[{id:'O1',patient:'P1',testId:'MALRDT',test:'Malaria RDT',performedAt:'2026-10-01T00:00:00Z',resultRows:[{name:'Band',state:'Result',value:'Negative'},{name:'Control',state:'Result',value:'Valid'}],reviewed:true},{id:'O2',patient:'P1',testId:'MALRDT',test:'Malaria RDT',resultAt:'2026-10-31T23:59:59Z',result:'Positive',reviewed:false},{id:'O3',patient:'P1',test:'Blank',created:'2026-10-01',resultRows:[{state:'Not performed',value:'5'}]},{id:'O4',patient:'P1',test:'September',performedAt:'2026-09-30T23:59:59Z',result:'5'}];
+ s.data.ultrasoundReports=[{id:'U1',patient:'P1',department:'Ultrasound',testId:'USABD',test:'Abdominal scan',examAt:'2026-10-05',resultRows:[{state:'Result',value:'Normal'}],reviewed:true}];
+ const all=monthlyFromState(s,admin,'2026-10');assert.equal(all.summary.tests,3);assert.equal(all.summary.patients,1);assert.equal(all.summary.final,2);assert.equal(all.summary.draft,1);assert.equal(all.summary.byTest.find(t=>t.name==='Malaria RDT').count,2);assert.equal(all.records[0].record.resultRows.length,2);assert.equal(monthlyFromState(s,lab,'2026-10').summary.tests,2);assert.throws(()=>monthlyFromState(s,admin,'2026-10','',7),e=>e.status===409);for(const m of ['2026-13','2026-00','2026-1','abc'])assert.throws(()=>reportMonth(m));
+});
+test('monthly reporting pages all records beyond the loaded UI page without duplication',()=>{const s=blank();s.data.orders=Array.from({length:1205},(_,i)=>({id:'O'+String(i).padStart(4,'0'),patient:'P1',test:'Glucose',performedAt:'2026-10-02',result:'5'}));let r=monthlyFromState(s,admin,'2026-10');assert.equal(r.summary.tests,1205);const ids=[...r.records.map(v=>v.key)];while(r.next){r=monthlyFromState(s,admin,'2026-10',r.next,8);ids.push(...r.records.map(v=>v.key))}assert.equal(ids.length,1205);assert.equal(new Set(ids).size,1205)});
+test('server stamps first performance and preserves it through edits, approval and client timestamp changes',()=>{const before={orders:[{id:'OLD',result:'5',created:'2026-09-10'}],ultrasoundReports:[]};const after={orders:[{id:'OLD',result:'6',performedAt:'2030-01-01'},{id:'NEW',resultRows:[{state:'Result',value:0}],performedAt:'1900-01-01'},{id:'BLANK',performedAt:'2030-01-01'}],ultrasoundReports:[]};stampCompletionDates(before,after,'2026-10-06T12:00:00Z');assert.equal(after.orders[0].performedAt,'2026-09-10');assert.equal(after.orders[1].performedAt,'2026-10-06T12:00:00Z');assert.equal(after.orders[2].performedAt,undefined)});
+
+test('ultrasound summary ranks all completed scans, handles ties and empty months without patient details',async()=>{
+ const {ultrasoundSummaryFromState,ultrasoundSummary}=await import('../worker/monthly-report.js');const s=blank();
+ s.data.orders=[{id:'LAB',patient:'P1',test:'Lab',performedAt:'2026-10-01',result:'5'}];
+ s.data.ultrasoundReports=[...Array.from({length:650},(_,i)=>({id:'US'+i,patient:'P'+i%3,testId:i%2?'ABD':'OBS',test:i%2?'Abdominal scan':'Obstetric scan',performedAt:'2026-10-31T23:59:59Z',resultRows:[{state:'Result',value:'Normal'}],reviewed:i%2===0})),{id:'BLANK',created:'2026-10-01',test:'Blank',resultRows:[{state:'Not assessed',value:'Normal'}]},{id:'OTHER',result:'Normal',performedAt:'2026-11-01T00:00:00Z'}];
+ const r=ultrasoundSummaryFromState(s,'2026-10');assert.equal(r.summary.scans,650);assert.equal(r.summary.patients,3);assert.equal(r.summary.final,325);assert.equal(r.summary.draft,325);assert.deepEqual(r.summary.byScan.map(r=>r.count),[325,325]);assert.equal(r.records,undefined);assert.equal(ultrasoundSummaryFromState(s,'2026-09').summary.scans,0);
+ assert.equal((await ultrasoundSummary({DB:{}},{role:'scientist',permissions:['ultrasoundView']},'2026-10',async()=>s)).summary.scans,650);
+ await assert.rejects(()=>ultrasoundSummary({DB:{}},{role:'finance'},'2026-10',async()=>s),e=>e.status===403);
+ await assert.rejects(()=>ultrasoundSummary({DB:{}},admin,'invalid',async()=>s),e=>e.status===400);
+});

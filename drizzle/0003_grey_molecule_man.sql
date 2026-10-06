@@ -1,0 +1,2 @@
+CREATE INDEX `clinical_patient_lookup` ON `clinical_records` (`collection`,`patient_id`,`record_id`);--> statement-breakpoint
+CREATE INDEX `clinical_name_lookup` ON `clinical_records` (`collection`,`search_name`,`record_id`);

@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {postgres} from '../worker/postgres.js';
+import {recordDelta} from '../web/record-delta.js';
+import worker from '../dist/server/index.js';
+const {createInterface}=await import('node:readline');const input=createInterface({input:process.stdin});const url=await new Promise(resolve=>input.once('line',resolve));input.close();console.log('Test connection received');
+if(!url)throw Error('Supply isolated test-branch connection on stdin');
+const pg=postgres(url),password='capacity-test-only';const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(password)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+const env={DATABASE_URL:url,KNOX_OWNER_EMAIL:'capacity-test@example.invalid',KNOX_OWNER_PASSWORD_HASH:hash};
+async function call(path,method='GET',data){const res=await worker.fetch(new Request('https://knox.test'+path,{method,headers:{'content-type':'application/json','x-knox-username':env.KNOX_OWNER_EMAIL,'x-knox-password':password},body:data?JSON.stringify(data):undefined}),env);const body=await res.json();return {status:res.status,body}}
+let response=await call('/api/state');assert.equal(response.status,200,JSON.stringify(response.body));assert.equal(response.body.storageVersion,3);
+const migrated=await pg.sql.query(`SELECT w.revision, m.revision AS new_revision, (SELECT count(*) FROM knox.clinical_records) AS records FROM knox.workspace w JOIN knox.storage_meta m ON w.id=m.id`);console.log('Migration active; legacy snapshot retained');
+await pg.sql.query(`INSERT INTO knox.clinical_records(key,collection,record_id,patient_id,search_name,data,updated) SELECT 'patients:CAPACITY_'||lpad(i::text,6,'0'),'patients','CAPACITY_'||lpad(i::text,6,'0'),NULL,'capacity patient '||lpad(i::text,6,'0'),jsonb_build_object('id','CAPACITY_'||lpad(i::text,6,'0'),'name','Capacity patient '||lpad(i::text,6,'0'),'dob','1990-01-01','sex','Male')::text,now()::text FROM generate_series(1,300000) i ON CONFLICT(key) DO NOTHING`);
+const start=performance.now();response=await call('/api/state?collection=patients&query=Capacity patient 299999');assert.equal(response.status,200,JSON.stringify(response.body));assert(response.body.data.patients.some(p=>p.id==='CAPACITY_299999'));console.log('PASS 300,000 synthetic patients; last-page prefix search ('+Math.round(performance.now()-start)+' ms)');
+let state=response.body;let edited=structuredClone(state.data);edited.patients.find(p=>p.id==='CAPACITY_299999').phone='test-update';
+const delta={revision:state.revision,...recordDelta(state.data,edited)};assert(JSON.stringify(delta).length<10000);
+response=await call('/api/state','PUT',delta);assert.equal(response.status,200,JSON.stringify(response.body));assert.equal((await pg.sql.query("SELECT data::jsonb->>'phone' AS phone FROM knox.clinical_records WHERE key='patients:CAPACITY_299999'"))[0].phone,'test-update');
+assert.equal((await pg.sql.query("SELECT count(*)::int AS n FROM knox.clinical_records WHERE collection='patients' AND record_id LIKE 'CAPACITY_%'"))[0].n,300000);
+assert.equal((await call('/api/state','PUT',delta)).status,409);console.log('PASS small isolated update, unrelated records preserved, stale-save rejection');
+response=await call('/api/state?collection=patients&after=CAPACITY_299950');assert.equal(response.status,200);assert(response.body.data.patients.some(p=>p.id==='CAPACITY_300000'));assert(response.body.data.patients.length<250);
+const whole=await call('/api/state','PUT',{revision:response.body.revision,data:response.body.data});assert([400,409].includes(whole.status));
+const summary=await call('/api/summary');assert.equal(summary.status,200,JSON.stringify(summary.body));assert(summary.body.counts.patients>=300000);
+console.log('PASS bounded pagination, total counts, legacy whole-workspace writes blocked');

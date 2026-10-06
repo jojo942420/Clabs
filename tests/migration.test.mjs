@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {migrateDatabase,TABLES} from '../worker/postgres.js';
+const source=Object.fromEntries(TABLES.map(t=>[t,[]]));source.workspace=[{id:1,revision:8,data:'{"patients":[{"id":"P1"}]}'}];
+let target={},status=null;
+const env={DB:{prepare(t){return {bind(){return t.split(' ').at(-1)}}},async batch(tables){return tables.map(t=>({results:structuredClone(source[t])}))}}};
+const pg={sql:{query(sql,args){if(sql.startsWith('INSERT INTO'))return {sql,args};if(sql.startsWith('SELECT status'))return Promise.resolve(status?[{status,manifest:{}}]:[]);if(sql.startsWith('SELECT *'))return Promise.resolve(target[sql.split('.').at(-1)]);if(sql.startsWith('UPDATE knox.migration_state')){status='ready';return Promise.resolve([])}throw Error(sql)},async transaction(queries){for(const {sql,args} of queries){if(sql.includes('migration_state'))status='copied';else target[sql.split(' ')[2].split('.')[1]]=JSON.parse(args[0])}}}};
+assert.equal((await migrateDatabase(env,pg)).verified,true);assert.equal(status,'ready');assert.deepEqual(target,source);
+assert.equal((await migrateDatabase(env,pg)).alreadyMigrated,true);
+status='copied';target.workspace[0].data='tampered';await assert.rejects(migrateDatabase(env,pg),/verification failed/);assert.equal(status,'copied');
+console.log('PASS migration preserves rows, is idempotent, and refuses cutover on mismatch');
