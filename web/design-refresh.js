@@ -106,3 +106,14 @@ const glassLoginStyle=document.createElement('style');glassLoginStyle.textConten
 .auth-login-form input{background:rgba(255,255,255,.78)}
 .auth-footnote{color:#557266}
 `;document.head.append(glassLoginStyle);
+
+// Simplified sign-in copy and a clearer view of the laboratory background.
+const simpleLoginStyle=document.createElement('style');simpleLoginStyle.textContent=`
+.auth-background{opacity:.34;filter:saturate(.72) contrast(1.02)}
+.auth-gate::before{background:linear-gradient(90deg,rgba(5,38,31,.42),rgba(5,38,31,.13)62%,rgba(5,38,31,.03))}
+.auth-subtitle{font-size:14px;color:#4f6f61;margin-bottom:20px}
+.auth-card .auth-footnote{margin-top:18px}
+@media(max-width:750px){.auth-background{opacity:.27}.auth-gate::before{background:rgba(5,38,31,.28)}}
+`;document.head.append(simpleLoginStyle);
+const simpleSubtitle=document.querySelector('.auth-subtitle');if(simpleSubtitle)simpleSubtitle.textContent='Enter your username and password.';
+const simpleAuthMessage=document.getElementById('authMessage');if(simpleAuthMessage&&!simpleAuthMessage.textContent.trim())simpleAuthMessage.textContent='';
