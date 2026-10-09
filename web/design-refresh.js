@@ -99,3 +99,10 @@ body>aside #nav button.active span{font-weight:800;color:#123f2d}
 @media(max-width:1100px) and (min-width:751px){body>aside #nav button,body>aside #nav button span{font-size:13px}}
 @media(max-width:750px){body>aside #nav button,body>aside #nav button span{font-size:12px;font-weight:750;line-height:1.1}}
 `;document.head.append(tabTypographyStyle);
+
+// Let the biomedical scene show softly through the login card.
+const glassLoginStyle=document.createElement('style');glassLoginStyle.textContent=`
+.auth-card{background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(241,248,244,.72));backdrop-filter:blur(18px) saturate(125%);-webkit-backdrop-filter:blur(18px) saturate(125%);border-color:rgba(255,255,255,.72);box-shadow:0 30px 90px #001c2866,inset 0 1px 0 rgba(255,255,255,.9)}
+.auth-login-form input{background:rgba(255,255,255,.78)}
+.auth-footnote{color:#557266}
+`;document.head.append(glassLoginStyle);
