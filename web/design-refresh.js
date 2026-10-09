@@ -56,3 +56,15 @@ const revealPassword=document.createElement('button');revealPassword.type='butto
 revealPassword.onclick=()=>{const reveal=clabsPassword.type==='password';clabsPassword.type=reveal?'text':'password';revealPassword.textContent=reveal?'Hide':'Show';revealPassword.setAttribute('aria-label',reveal?'Hide password':'Show password');revealPassword.setAttribute('aria-pressed',String(reveal));};passwordWrap.append(revealPassword);
 const polishedLoginScreen=loginScreen;loginScreen=function(...args){clabsPassword.type='password';revealPassword.textContent='Show';revealPassword.setAttribute('aria-label','Show password');revealPassword.setAttribute('aria-pressed','false');return polishedLoginScreen(...args)};
 const polishedGroupedNav=groupedNav;groupedNav=function(){polishedGroupedNav();document.querySelectorAll('#nav button').forEach(button=>{button.title=button.dataset.page;button.setAttribute('aria-label',button.dataset.page);if(button.dataset.page==='Electrocardiogram')button.querySelector('span').textContent='ECG';if(button.dataset.page==='Stock Records')button.querySelector('span').textContent='Stock';});};
+
+// Original 4 × 4 rendered medical atlas: one cached asset for every shortcut.
+const clabsMedicalTiles={'Patients':0,'Orders':1,'Results':2,'Quality control':3,'Analyzers':4,'Test catalogue':5,'Ultrasound':6,'Electrocardiogram':7,'Reports':8,'Stock Records':9,'Finance':10,'Manage records':11,'Audit log':12,'Settings':13,'Staff accounts':14,'Staff attendance':15};
+const medicalTileStyle=document.createElement('style');medicalTileStyle.textContent=`
+.home-dashboard .tab-thumbnail{background:#fff;gap:5px;padding:8px 5px 12px;min-height:119px;overflow:hidden}
+.tab-thumbnail .medical-3d-icon{display:block;flex:none;width:76px;height:76px;background-image:url('__CLABS_MEDICAL_ATLAS__');background-size:400% 400%;background-repeat:no-repeat;transition:transform .2s;mix-blend-mode:multiply}
+.tab-thumbnail:hover .medical-3d-icon{transform:translateY(-2px) scale(1.05)}
+.tab-thumbnail:hover{background:#fff}.tab-thumbnail::after{display:none}
+@media(max-width:750px){.home-dashboard .tab-thumbnail{min-height:111px}.tab-thumbnail .medical-3d-icon{width:68px;height:68px}}
+@media(prefers-reduced-motion:reduce){.tab-thumbnail .medical-3d-icon{transition:none}.tab-thumbnail:hover .medical-3d-icon{transform:none}}
+`;document.head.append(medicalTileStyle);
+const medicalThumbnailRender=render;render=function(){medicalThumbnailRender();if(!currentUser||page!=='Overview')return;document.querySelectorAll('#tabThumbnails .tab-thumbnail').forEach(link=>{const target=decodeURIComponent(link.getAttribute('href').slice(1)),index=clabsMedicalTiles[target];if(index===undefined)return;link.querySelector('.clabs-icon')?.remove();const icon=document.createElement('span');icon.className='medical-3d-icon';icon.setAttribute('aria-hidden','true');icon.style.backgroundPosition=((index%4)*100/3)+'% '+(Math.floor(index/4)*100/3)+'%';link.prepend(icon);});};
