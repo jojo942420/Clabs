@@ -31,8 +31,8 @@ const clinicalData={patients:[{id:'P1',name:'Test',dob:'1990-01-01',sex:'Male'}]
 validateRelease(clinical,clinicalData);
 for(const mutate of [o=>o.received=false,o=>o.resultRows[0].value='',o=>o.resultRows[0].reference='PROVISIONAL',o=>o.clinicalReview.qc=false,o=>o.resultRows[0].flag='Critical']){const x=structuredClone(clinical);mutate(x);assert.throws(()=>validateRelease(x,clinicalData));}
 assert.equal((await call('/api/me','GET',null,null,{'oai-authenticated-user-id':'x','oai-authenticated-user-email':'owner@example.com'})).status,401);
-assert.equal((await call('/api/me')).data.user.name,'IT ADMIN');
-console.log('PASS: release rejects incomplete results, provisional ranges, unchecked QC, unreceived samples and undocumented critical results; passwordless platform identity rejected; IT ADMIN display name');
+assert.equal((await call('/api/me')).data.user.name,'Admin (Administrator)');
+console.log('PASS: release rejects incomplete results, provisional ranges, unchecked QC, unreceived samples and undocumented critical results; passwordless platform identity rejected; Admin (Administrator) display name');
 // Legacy reviewed orders lack patientId and may predate release documentation.
 let legacy=(await call('/api/state')).data;
 legacy.data.orders.push({id:'LEGACY1',patient:'P1',reviewed:true,result:'Historical result',reviewer:'Original reviewer'});
