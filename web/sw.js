@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'knox-shell-2026-10-performance-v8';
+const SHELL_CACHE = 'clabs-shell-2026-10-design-v10';
 const PUBLIC_ASSETS=/*__PUBLIC_ASSETS__*/;
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(SHELL_CACHE).then(async cache => {
