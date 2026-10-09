@@ -68,3 +68,25 @@ const medicalTileStyle=document.createElement('style');medicalTileStyle.textCont
 @media(prefers-reduced-motion:reduce){.tab-thumbnail .medical-3d-icon{transition:none}.tab-thumbnail:hover .medical-3d-icon{transform:none}}
 `;document.head.append(medicalTileStyle);
 const medicalThumbnailRender=render;render=function(){medicalThumbnailRender();if(!currentUser||page!=='Overview')return;document.querySelectorAll('#tabThumbnails .tab-thumbnail').forEach(link=>{const target=decodeURIComponent(link.getAttribute('href').slice(1)),index=clabsMedicalTiles[target];if(index===undefined)return;link.querySelector('.clabs-icon')?.remove();const icon=document.createElement('span');icon.className='medical-3d-icon';icon.setAttribute('aria-hidden','true');icon.style.backgroundPosition=((index%4)*100/3)+'% '+(Math.floor(index/4)*100/3)+'%';link.prepend(icon);});};
+
+// Full-width top navigation: keep the existing buttons, routing and permissions.
+const topNavigationStyle=document.createElement('style');topNavigationStyle.textContent=`
+body>aside{position:sticky;inset:auto;top:0;z-index:30;display:flex;flex-direction:row;align-items:center;gap:22px;width:100%;height:auto;min-height:86px;padding:17px 26px;background:linear-gradient(105deg,#10392f,#1d4d3c);border:0;border-bottom:1px solid #406754;box-shadow:0 5px 24px #103b2915;overflow:visible}
+body>aside .brand{flex:0 0 auto;margin:0;padding:0 20px 0 0;border-right:1px solid #ffffff24}body>aside .brand-logo{width:112px;max-width:112px;height:45px;object-fit:contain;border-radius:11px;padding:2px 7px;box-shadow:0 3px 10px #031f251f}
+body>aside .navlabel,body>aside .sidebottom{display:none}
+body>aside #nav{position:relative;display:flex;flex:1;min-width:0;gap:12px;align-items:center;overflow-x:auto;overflow-y:hidden;padding:4px 3px 8px;scrollbar-width:thin;scrollbar-color:#799e86 transparent;overscroll-behavior-x:contain;scroll-padding-inline:8px}
+body>aside #nav .navgroup{display:flex;flex:0 0 auto;align-items:center;gap:5px;margin:0;padding:0 12px 0 0;border:0;border-right:1px solid #ffffff1c}
+body>aside #nav .navgroup:last-child{padding-right:0;border-right:0}body>aside #nav .navgroup-title{display:none}
+body>aside #nav button{width:auto;min-width:74px;min-height:43px;flex:0 0 auto;flex-direction:row;align-items:center;justify-content:center;gap:7px;padding:10px 13px;margin:0;border-radius:12px;border:1px solid transparent;background:transparent;color:#c6dbcf;font-size:12px;font-weight:600;white-space:nowrap}
+body>aside #nav button[hidden]{display:none}body>aside #nav button span{white-space:nowrap}body>aside #nav button>.clabs-icon{width:20px;height:20px;color:#a1c5b1}body>aside #nav button .clabs-icon svg{display:block;width:18px;height:18px}
+body>aside #nav button:hover{background:#ffffff0d;border-color:#ffffff18;color:#fff}
+body>aside #nav button.active{background:linear-gradient(140deg,#effbed,#cfebd6);border-color:#dff6e4;color:#174b34;box-shadow:0 3px 0 #062c2355,0 5px 14px #032c251f}
+body>aside #nav button.active>.clabs-icon{color:#21784f}
+main{margin-left:0}main>header{height:62px;padding:0 30px;background:#ffffffeb}.workspace{max-width:1550px;padding:26px 30px}.home-dashboard{max-width:1250px}
+@media(max-width:1100px) and (min-width:751px){body>aside{width:100%;padding:14px 20px;gap:16px}main{margin-left:0}body>aside #nav button{font-size:12px}}
+@media(max-width:750px){body>aside{flex-direction:column;align-items:stretch;gap:8px;padding:10px 12px 8px;min-height:0}body>aside .brand{width:100%;border:0;padding:0 2px}body>aside .brand-logo{width:91px;max-width:91px;height:32px;padding:0 5px;border-radius:8px}body>aside #nav{flex:0 0 auto;gap:8px;width:100%;padding:3px 2px 6px}body>aside #nav .navgroup{padding-right:8px;gap:4px}body>aside #nav button{min-width:68px;min-height:39px;font-size:11px;padding:9px 11px;gap:6px;border-radius:10px}body>aside #nav button>.clabs-icon{width:17px;height:17px}body>aside #nav button .clabs-icon svg{width:17px;height:17px}main>header{height:54px;padding:0 16px}.workspace{padding:20px 16px}main{margin:0}}
+@media print{body>aside{display:none!important}main{margin:0!important}.workspace{padding:0}}
+`;document.head.append(topNavigationStyle);
+document.getElementById('nav').setAttribute('aria-label','Workspace navigation');
+let clabsTopNavPage=null;
+const topNavigationRender=render;render=function(){const nav=document.getElementById('nav'),previousScroll=nav.scrollLeft;topNavigationRender();if(!currentUser)return;nav.scrollLeft=previousScroll;const active=nav.querySelector('button.active:not([hidden])');if(active&&clabsTopNavPage!==page){const outer=nav.getBoundingClientRect(),inner=active.getBoundingClientRect();if(inner.left<outer.left)nav.scrollLeft+=inner.left-outer.left-8;else if(inner.right>outer.right)nav.scrollLeft+=inner.right-outer.right+8;}clabsTopNavPage=page;};
