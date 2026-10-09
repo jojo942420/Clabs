@@ -70,7 +70,7 @@ async function offlinePersist() {
     offlineSalt=salt;offlineKey=key;
   }
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const payload = { user: currentUser, revision: serverRevision, base: offlineBase, working: offlineWorking, pending: offlinePending };
+  const payload = { user: currentUser, revision: serverRevision, base: offlineBase, working: offlineWorking, pending: offlinePending, changeReasons: typeof pendingAuditReasons!=='undefined'?pendingAuditReasons:{} };
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: new TextEncoder().encode(email) }, offlineKey, new TextEncoder().encode(JSON.stringify(payload)));
   if(session!==workspaceSession)throw new Error('Session changed before caching records.');
   await offlineWrite(email, { salt: [...offlineSalt], iv: [...iv], ciphertext, updatedAt: new Date().toISOString() });
@@ -113,14 +113,14 @@ startWorkspace = async function() {
     if (existing) saved = await offlineUnlock(email, manualPassword);
   } catch (error) { unlockError = error; }
   try {
-    const me = await api('/api/me');
-    const latest = await api('/api/state');
+    const [me,latest] = await Promise.all([api('/api/me'),api('/api/state')]);
     if(session!==workspaceSession)return;
     currentUser = me.user;
     if (saved?.pending && saved.user?.email === me.user.email) {
       offlineBase = saved.base;
       offlineWorking = saved.working;
       offlinePending = true;
+      if(typeof pendingAuditReasons!=='undefined')pendingAuditReasons={...(saved.changeReasons||{})};
       db = offlineClone(offlineWorking);
       serverRevision = saved.revision;
     } else {

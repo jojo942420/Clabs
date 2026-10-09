@@ -27,7 +27,7 @@ function recordsHarness(){
  return {context,pending,classes,run:code=>vm.runInContext(code,context)};
 }
 test('rapid navigation commits only the most recently requested record page',async()=>{
- const h=recordsHarness();const a=h.run("loadRecordPage({collection:'patients',query:'Old'})"),b=h.run("loadRecordPage({collection:'patients',query:'New'})");
+ const h=recordsHarness();const a=h.run("loadRecordPage({collection:'patients',query:'Old'})");assert(h.classes.has('loading-records'));assert(!h.classes.has('saving'));const b=h.run("loadRecordPage({collection:'patients',query:'New'})");
  const data=blank();data.patients=[{id:'NEW'}];h.pending[1].resolve({data,revision:2,storageVersion:3});await b;
  h.pending[0].resolve({data:blank(),revision:1,storageVersion:3});await a;
  assert.equal(h.run('db.patients[0].id'),'NEW');assert.equal(h.run('recordServerBase.patients[0].id'),'NEW');assert.equal(h.run('recordView.query'),'New');assert.equal(h.run('query'),'New');assert.equal(h.classes.size,0);

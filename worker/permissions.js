@@ -29,12 +29,12 @@ export function authorizeChanges(user,before,after){
  for(const [key,permission]of Object.entries({patients:'patients',qc:'qc',sales:'finance',prices:'catalogue',customTests:'catalogue',testConfig:'catalogue',analyzers:'analyzers'}))check(key,permission);
  for(const key of ['patients','orders','qc','sales','customTests','analyzers'])if(before[key].some(x=>!after[key].some(y=>x.id===y.id)))requirePermission(user,'delete');
  if(before.orders.some(o=>o.reviewed&&!after.orders.some(n=>n.id===o.id)))requirePermission(user,'amend');
- const orderFields=['patient','patientId','priority','clinician','collected','requestNote','testId','test','department','specimen','template','created','requestId'];
+ const orderFields=['patient','patientId','priority','clinician','collected','requestNote','testId','test','department','specimen','template','created','requestId','operator'];
  for(const o of after.orders){const old=before.orders.find(x=>x.id===o.id);if(equal(old,o))continue;
  if(old?.reviewed)requirePermission(user,'amend');
  if(!old)requirePermission(user,'orders');
  for(const key of new Set([...Object.keys(old||{}),...Object.keys(o)])){
- if(equal(old?.[key],o[key])||key==='id')continue;
+ if(equal(old?.[key],o[key])||key==='id'||key==='changeReason')continue;
  if(key==='reviewed'){if(o.reviewed)requirePermission(user,'review');continue;}
  if(key==='received'){if(o.received||old)requirePermission(user,'specimens');continue;}
  requirePermission(user,orderFields.includes(key)?'orders':'results');

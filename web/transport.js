@@ -29,3 +29,6 @@ export async function requestJSON(path, options = {}, { timeoutMs = 20000, retri
     } finally { clearTimeout(timer); }
   }
 }
+
+// Share only in-flight reads, never cache patient data or retry writes.
+export function createReadCoalescer(){const pending=new Map();return function(key,load){if(!pending.has(key)){const promise=Promise.resolve().then(load);pending.set(key,promise);promise.finally(()=>{if(pending.get(key)===promise)pending.delete(key)}).catch(()=>{});}return pending.get(key).then(value=>structuredClone(value));};}

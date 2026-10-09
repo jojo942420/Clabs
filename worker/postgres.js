@@ -25,4 +25,6 @@ export async function migrateDatabase(env,pg){
  await pg.sql.query("UPDATE knox.migration_state SET status='ready',completed_at=now() WHERE id=1 AND status='copied'");
  return {migrated:true,verified:true,manifest};
 }
-export async function selectDatabase(env){if(!env.DATABASE_URL)return {env,ready:true};const pg=postgres(env.DATABASE_URL);const record=(await pg.sql.query('SELECT status FROM knox.migration_state WHERE id=1'))[0];return {env:record?.status==='ready'?{...env,DB:pg}:env,ready:record?.status==='ready',pg};}
+const readyDatabases=new WeakMap();
+export async function databaseReady(pg){if(!readyDatabases.has(pg)){const check=Promise.resolve(pg.sql.query('SELECT status FROM knox.migration_state WHERE id=1')).then(rows=>{const ready=rows[0]?.status==='ready';if(!ready)readyDatabases.delete(pg);return ready}).catch(error=>{readyDatabases.delete(pg);throw error});readyDatabases.set(pg,check)}return readyDatabases.get(pg);}
+export async function selectDatabase(env){if(!env.DATABASE_URL)return {env,ready:true};const pg=postgres(env.DATABASE_URL);const ready=await databaseReady(pg);return {env:ready?{...env,DB:pg}:env,ready,pg};}
