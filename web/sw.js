@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'clabs-shell-2026-10-topnav-v12';
+const SHELL_CACHE = 'clabs-shell-2026-10-loginhero-v13';
 const PUBLIC_ASSETS=/*__PUBLIC_ASSETS__*/;
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(SHELL_CACHE).then(async cache => {

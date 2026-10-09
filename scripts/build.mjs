@@ -4,9 +4,9 @@ import {createHash} from 'node:crypto';
 const assets={};
 function publicImage(file,type){const bytes=fs.readFileSync(file),hash=createHash('sha256').update(bytes).digest('hex').slice(0,16),url='/assets/'+hash+'-'+file.split('/').at(-1);assets[url]={type,body:bytes.toString('base64')};return url}
 const medicalAtlasUrl=publicImage('web/assets/clabs-medical-3d.webp','image/webp');
-const heroUrl=publicImage('web/assets/knox-lab-hero.jpg','image/jpeg');
+const heroUrl=publicImage('web/assets/clabs-login-hero.png','image/png');
 const logoUrl=publicImage('web/assets/clabs-logo.svg','image/svg+xml');
-const hero=fs.readFileSync('web/assets/knox-lab-hero.jpg').toString('base64');
+const hero=fs.readFileSync('web/assets/clabs-login-hero.png').toString('base64');
 const logo=fs.readFileSync('web/assets/clabs-logo.svg').toString('base64');
 const recordsCode=fs.readFileSync('web/record-delta.js','utf8').replace(/^export /gm,'')+'\n'+fs.readFileSync('web/records.js','utf8');
 const permissionsCode=fs.readFileSync('worker/permissions.js','utf8').replace(/^export /gm,'')+'\n'+fs.readFileSync('web/permissions.js','utf8')+'\n'+fs.readFileSync('web/result-email.js','utf8');
