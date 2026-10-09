@@ -90,3 +90,12 @@ main{margin-left:0}main>header{height:62px;padding:0 30px;background:#ffffffeb}.
 document.getElementById('nav').setAttribute('aria-label','Workspace navigation');
 let clabsTopNavPage=null;
 const topNavigationRender=render;render=function(){const nav=document.getElementById('nav'),previousScroll=nav.scrollLeft;topNavigationRender();if(!currentUser)return;nav.scrollLeft=previousScroll;const active=nav.querySelector('button.active:not([hidden])');if(active&&clabsTopNavPage!==page){const outer=nav.getBoundingClientRect(),inner=active.getBoundingClientRect();if(inner.left<outer.left)nav.scrollLeft+=inner.left-outer.left-8;else if(inner.right>outer.right)nav.scrollLeft+=inner.right-outer.right+8;}clabsTopNavPage=page;};
+
+// Clear, bold workspace tab labels.
+const tabTypographyStyle=document.createElement('style');tabTypographyStyle.textContent=`
+body>aside #nav button{font-size:14px;font-weight:750;letter-spacing:.05px;line-height:1.15;text-shadow:0 1px 0 #062d2018}
+body>aside #nav button span{font-size:14px;font-weight:750;line-height:1.15}
+body>aside #nav button.active span{font-weight:800;color:#123f2d}
+@media(max-width:1100px) and (min-width:751px){body>aside #nav button,body>aside #nav button span{font-size:13px}}
+@media(max-width:750px){body>aside #nav button,body>aside #nav button span{font-size:12px;font-weight:750;line-height:1.1}}
+`;document.head.append(tabTypographyStyle);
